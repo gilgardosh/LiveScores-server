@@ -58,9 +58,10 @@ app.listen(port, () => {
 // });
 const filters = {
   'competition_id': 177,
+  'season_id': 4
 };
 
-livescores.getFixtursFiltered(filters, (err, data) => {
+livescores.getStandings(filters, (err, data) => {
   if (err) {
     console.log("Fixtures:", err);
   } else {
