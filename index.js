@@ -61,10 +61,10 @@ const filters = {
   'season_id': 4
 };
 
-livescores.getStandings(filters, (err, data) => {
-  if (err) {
-    console.log("Fixtures:", err);
-  } else {
-    console.log("Fixtures:", data);
-  }
-});
+// livescores.getStandings(filters, (err, data) => {
+//   if (err) {
+//     console.log("Fixtures:", err);
+//   } else {
+//     console.log("Fixtures:", data);
+//   }
+// });

@@ -261,7 +261,7 @@ function LivescoreAPI() {
     }
 
     if (filters.team != undefined) {
-      checkTeam = this.checkCouComPagTeaFed(filters.page);
+      checkTeam = this.checkCouComPagTeaFed(filters.team);
       if (checkTeam == 0) {
         return callback(
           new Error("Incorrect parameter! The team id must be an integer!")
@@ -469,7 +469,7 @@ function LivescoreAPI() {
           value: filters.language
         });
       }
-    };
+    }
 
     if (filters.page != undefined) {
       checkPage = this.checkCouComPagTeaFed(filters.page);
@@ -523,89 +523,88 @@ function LivescoreAPI() {
     }
   };
 
-
   /* get fixtures with filters:
     competition_id => integer(competition_id)
     season_id => integer (season id)
     language => string [ar, fa, en, ru] */
-    this.getStandings = (filters, callback) => {
-        let curFilter = [];
+  this.getStandings = (filters, callback) => {
+    let curFilter = [];
 
-        if (filters.competition_id != undefined) {
-            checkCompetition = this.checkCouComPagTeaFed(filters.competition_id);
-            if (checkCompetition == 0) {
-                return callback(
-                new Error(
-                    "Incorrect parameter! The competition id must be an integer!"
-                )
-                );
-            } else if (checkCompetition == -1) {
-                return callback(
-                new Error(
-                    "Incorrect parameter! The competition id must be bigger than 0!"
-                )
-                );
-            } else if (checkCompetition == 1) {
-                curFilter.push({
-                name: "competition_id",
-                value: filters.competition_id
-                });
-            }
-        }
+    if (filters.competition_id != undefined) {
+      checkCompetition = this.checkCouComPagTeaFed(filters.competition_id);
+      if (checkCompetition == 0) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The competition id must be an integer!"
+          )
+        );
+      } else if (checkCompetition == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The competition id must be bigger than 0!"
+          )
+        );
+      } else if (checkCompetition == 1) {
+        curFilter.push({
+          name: "competition_id",
+          value: filters.competition_id
+        });
+      }
+    }
 
-        if (filters.season_id != undefined) {
-            if (!Number.isInteger(filters.season_id)) {
-                return callback(
-                new Error("Incorrect parameter! The seson_id must be an integer!")
-                );
-            } else if (filters.season_id <= 0 || filters.season_id >= 6) {
-                return callback(
-                new Error("Incorrect parameter! The season_id must be in range 1-5!")
-                );
-            } else {
-                curFilter.push({
-                name: "season",
-                value: filters.season_id
-                });
-            }
-        }
+    if (filters.season_id != undefined) {
+      if (!Number.isInteger(filters.season_id)) {
+        return callback(
+          new Error("Incorrect parameter! The seson_id must be an integer!")
+        );
+      } else if (filters.season_id <= 0 || filters.season_id >= 6) {
+        return callback(
+          new Error("Incorrect parameter! The season_id must be in range 1-5!")
+        );
+      } else {
+        curFilter.push({
+          name: "season",
+          value: filters.season_id
+        });
+      }
+    }
 
-        if (filters.language != undefined) {
-            checkLanguage = this.checkLanguage(filters.language);
-            if (checkLanguage == 0) {
-            return callback(
-                new Error("Incorrect parameter! The language must be a string!")
-            );
-            } else if (checkLanguage == -1) {
-            return callback(
-                new Error(
-                "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-                )
-            );
-            } else if (checkLanguage == 1) {
-            curFilter.push({
-                name: "lang",
-                value: filters.language
-            });
-            }
-        }
-        
-        if (curFilter.length >= 2) {
-            request(
-            this.buildUrl("leagues/table.json", curFilter),
-            {
-                json: true
-            },
-            (err, res, body) => {
-                if (err) {
-                return callback(err);
-                }
+    if (filters.language != undefined) {
+      checkLanguage = this.checkLanguage(filters.language);
+      if (checkLanguage == 0) {
+        return callback(
+          new Error("Incorrect parameter! The language must be a string!")
+        );
+      } else if (checkLanguage == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
+          )
+        );
+      } else if (checkLanguage == 1) {
+        curFilter.push({
+          name: "lang",
+          value: filters.language
+        });
+      }
+    }
 
-                callback(null, res.body.data.table);
-            }
-            );
+    if (curFilter.length >= 2) {
+      request(
+        this.buildUrl("leagues/table.json", curFilter),
+        {
+          json: true
+        },
+        (err, res, body) => {
+          if (err) {
+            return callback(err);
+          }
+
+          callback(null, res.body.data.table);
         }
-    };
+      );
+    }
+  };
 
   //get full history
   this.getFullHistory = callback => {
@@ -624,16 +623,175 @@ function LivescoreAPI() {
     );
   };
 
-    /* get history with filters:
-       from date => string (yyyy-mm-dd)
-       to date => string (yyyy-mm-dd)
+  /* get history with filters:
+       fromDate => string (yyyy-mm-dd)
+       toDate => string (yyyy-mm-dd)
        competition_id => integer(competition_id)
        team => integer(team))
        page => integer(pageNo)
        language => string [ar, fa, en, ru] */
   this.getHistoryWithFilters = (filters, callback) => {
+    let curFilter = [];
+
+    if (filters.fromDate != undefined) {
+      checkDate = this.checkDate(filters.fromDate);
+      if (checkDate == 0 || checkDate == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
+          )
+        );
+      } else if (checkDate == 2) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The year must be in this format: YYYY"
+          )
+        );
+      } else if (checkDate == 3) {
+        return callback(
+          new Error("Incorrect parameter! The month must be in this format: MM")
+        );
+      } else if (checkDate == 4) {
+        return callback(
+          new Error("Incorrect parameter! The day must be in this format: DD")
+        );
+      } else if (checkDate == 1) {
+        curFilter.push({
+          name: "from",
+          value: filters.fromDate
+        });
+      }
+    }
+
+    if (filters.toDate != undefined) {
+      checkDate = this.checkDate(filters.toDate);
+      if (checkDate == 0 || checkDate == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
+          )
+        );
+      } else if (checkDate == 2) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The year must be in this format: YYYY"
+          )
+        );
+      } else if (checkDate == 3) {
+        return callback(
+          new Error("Incorrect parameter! The month must be in this format: MM")
+        );
+      } else if (checkDate == 4) {
+        return callback(
+          new Error("Incorrect parameter! The day must be in this format: DD")
+        );
+      } else if (checkDate == 1) {
+        curFilter.push({
+          name: "to",
+          value: filters.toDate
+        });
+      }
+    }
+
+    if (filters.competition_id != undefined) {
+      checkCompetition = this.checkCouComPagTeaFed(filters.competition_id);
+      if (checkCompetition == 0) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The competition id must be an integer!"
+          )
+        );
+      } else if (checkCompetition == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The competition id must be bigger than 0!"
+          )
+        );
+      } else if (checkCompetition == 1) {
+        curFilter.push({
+          name: "competition_id",
+          value: filters.competition_id
+        });
+      }
+    }
+
+    if (filters.team != undefined) {
+      checkTeam = this.checkCouComPagTeaFed(filters.team);
+      if (checkTeam == 0) {
+        return callback(
+          new Error("Incorrect parameter! The team id must be an integer!")
+        );
+      } else if (checkTeam == -1) {
+        return callback(
+          new Error("Incorrect parameter! The team id be bigger than 0!")
+        );
+      } else if (checkTeam == 1) {
+        curFilter.push({
+          name: "team",
+          value: filters.team
+        });
+      }
+    }
+
+    if (filters.page != undefined) {
+      checkPage = this.checkCouComPagTeaFed(filters.page);
+      if (checkPage == 0) {
+        return callback(
+          new Error("Incorrect parameter! The page must be an integer!")
+        );
+      } else if (checkPage == -1) {
+        return callback(
+          new Error("Incorrect parameter! The page must be bigger than 0!")
+        );
+      } else if (checkPage == 1) {
+        curFilter.push({
+          name: "page",
+          value: filters.page
+        });
+      }
+    }
+
+    if (filters.language != undefined) {
+      checkLanguage = this.checkLanguage(filters.language);
+      if (checkLanguage == 0) {
+        return callback(
+          new Error("Incorrect parameter! The language must be a string!")
+        );
+      } else if (checkLanguage == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
+          )
+        );
+      } else if (checkLanguage == 1) {
+        curFilter.push({
+          name: "lang",
+          value: filters.language
+        });
+      }
+    }
+
+    if (curFilter.length >= 1) {
+      request(
+        this.buildUrl("scores/history.json", curFilter),
+        {
+          json: true
+        },
+        (err, res, body) => {
+          if (err) {
+            return callback(err);
+          }
+
+          callback(null, res.body.data.match);
+        }
+      );
+    }
+  };
+
+  //get all livescores
+  this.getAllLiveScores = callback => {
     request(
-      this.buildUrl("scores/history.json"),
+      this.buildUrl("scores/live.json"),
       {
         json: true
       },
@@ -647,666 +805,196 @@ function LivescoreAPI() {
     );
   };
 
+  /* get livescores with filters:
+       country_id => integer(country_id)
+       language => string [ar, fa, en, ru]
+       competition_id => integer(competition_id)*/
+  this.getLiveScoresWithFilters = (filters, callback) => {
+    let curFilter = [];
 
+    if (filters.country_id != undefined) {
+      checkCountry = this.checkCouComPagTeaFed(filters.country_id);
+      if (checkCountry == 0) {
+        return callback(
+          new Error("Incorrect parameter! The country id must be an integer!")
+        );
+      } else if (checkCountry == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The country id must be bigger than 0!"
+          )
+        );
+      } else if (checkCountry == 1) {
+        curFilter.push({
+          name: "country_id",
+          value: filters.country_id
+        });
+      }
+    }
 
+    if (filters.language != undefined) {
+      checkLanguage = this.checkLanguage(filters.language);
+      if (checkLanguage == 0) {
+        return callback(
+          new Error("Incorrect parameter! The language must be a string!")
+        );
+      } else if (checkLanguage == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
+          )
+        );
+      } else if (checkLanguage == 1) {
+        curFilter.push({
+          name: "lang",
+          value: filters.language
+        });
+      }
+    }
 
+    if (filters.competition_id != undefined) {
+      checkCompetition = this.checkCouComPagTeaFed(filters.competition_id);
+      if (checkCompetition == 0) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The competition id must be an integer!"
+          )
+        );
+      } else if (checkCompetition == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The competition id must be bigger than 0!"
+          )
+        );
+      } else if (checkCompetition == 1) {
+        curFilter.push({
+          name: "competition_id",
+          value: filters.competition_id
+        });
+      }
+    }
 
+    if (curFilter.length >= 1) {
+      request(
+        this.buildUrl("scores/live.json", curFilter),
+        {
+          json: true
+        },
+        (err, res, body) => {
+          if (err) {
+            return callback(err);
+          }
 
-    //get livescores
-    this.getAllLiveScores = callback => {
-        request(
-          this.buildUrl("scores/live.json"),
+          callback(null, res.body.data.match);
+        }
+      );
+    }
+  };
+
+  // get live event    match_id => integer(match_id)
+  this.getLiveMatchEvents = (match_id, callback) => {
+    request(
+      this.buildUrl("scores/live.json", [
+        {
+          name: "id",
+          value: match_id
+        }
+      ]),
+      {
+        json: true
+      },
+      (err, res, body) => {
+        if (err) {
+          return callback(err);
+        }
+        callback(null, res.body.data.match);
+      }
+    );
+  };
+
+  // get match statistics    match_id => integer(match_id)
+  this.getMatchStats = (match_id, callback) => {
+    request(
+      this.buildUrl("matches/stats.json", [
+        {
+          name: "match_id",
+          value: match_id
+        }
+      ]),
+      {
+        json: true
+      },
+      (err, res, body) => {
+        if (err) {
+          return callback(err);
+        }
+        callback(null, res.body.data);
+      }
+    );
+  };
+
+  //
+  /* get teams head 2 head:
+       team1_id => integer(team))
+       team2_id => integer(team))
+       language => string [ar, fa, en, ru] */
+  this.getTeamsH2H = (filters, callback) => {
+    let curFilter = [];
+
+    if (filters.language != undefined) {
+      checkLanguage = this.checkLanguage(filters.language);
+      if (checkLanguage == 0) {
+        return callback(
+          new Error("Incorrect parameter! The language must be a string!")
+        );
+      } else if (checkLanguage == -1) {
+        return callback(
+          new Error(
+            "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
+          )
+        );
+      } else if (checkLanguage == 1) {
+        curFilter.push({
+          name: "lang",
+          value: filters.language
+        });
+      }
+    }
+
+    if (filters.team1_id != undefined || filters.team2_id != undefined) {
+      checkTeam1 = this.checkCouComPagTeaFed(filters.team1_id);
+      checkTeam2 = this.checkCouComPagTeaFed(filters.team2_id);
+      if (checkTeam1 == 0 || checkTeam2 == 0) {
+        return callback(
+          new Error("Incorrect parameter! The team id must be an integer!")
+        );
+      } else if (checkTeam1 == -1 || checkTeam2 == -1) {
+        return callback(
+          new Error("Incorrect parameter! The team id be bigger than 0!")
+        );
+      } else if (checkTeam1 == 1 || checkTeam2 == 1) {
+        curFilter.push(
           {
-            json: true
+            name: "team1_id",
+            value: filters.team1_id
           },
-          (err, res, body) => {
-            if (err) {
-              return callback(err);
-            }
-    
-            callback(null, res.body.data.match);
+          {
+            name: "team2_id",
+            value: filters.team2_id
           }
         );
-      };
-
-
-
-
-
-
-
-
-
-  //get fixtures from a certain date      PARAMETER => string (yyyy-mm-dd)
-  this.getFixturesFromDate = (date, callback) => {
-    check = this.checkDate(date);
-    if (check == 0 || check == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-        )
-      );
-    } else if (check == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (check == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (check == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    request(
-      this.buildUrl("fixtures/matches.json", [
-        {
-          name: "date",
-          value: date
-        }
-      ]),
-      {
-        json: true
-      },
-      (err, res, body) => {
-        if (err) {
-          return callback(err);
-        }
-        callback(null, res.body.data.fixtures);
       }
-    );
-  };
-
-  //get fixtures from a certain competition    PARAMETER => integer(competition_id)
-  this.getFixturesFromCompetition = (competition_id, callback) => {
-    check = this.checkCouComPagTeaFed(competition_id);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    } else {
-      request(
-        this.buildUrl("fixtures/matches.json", [
-          {
-            name: "competition_id",
-            value: competition_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.fixtures);
-        }
-      );
-    }
-  };
-
-  //get fixtures in a certain language    PARAMETER => string     [ar, fa, en, ru]
-  this.getFixturesInLanguage = (language, callback) => {
-    check = this.checkLanguage(language);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    } else {
-      request(
-        this.buildUrl("fixtures/matches.json", [
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.fixtures);
-        }
-      );
-    }
-  };
-
-  //get fixtures from a certain page      PARAMETER => integer
-  this.getFixturesFromPage = (page, callback) => {
-    check = this.checkCouComPagTeaFed(page);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The page must be an integer!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error("Incorrect parameter! The page must be bigger than 0!")
-      );
-    } else {
-      request(
-        this.buildUrl("fixtures/matches.json", [
-          {
-            name: "page",
-            value: page
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.fixtures);
-        }
-      );
-    }
-  };
-
-  //get fixtures from a date, in a certain language from a certain competition
-  this.getFixturesDateLanguageCompetition = (
-    date,
-    language,
-    competition_id,
-    callback
-  ) => {
-    checkLanguage = this.checkLanguage(language);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    checkDate = this.checkDate(date);
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkDate == 0 || checkDate == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-        )
-      );
-    } else if (checkDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkDate == 1 && checkLanguage == 1 && checkCompetition == 1) {
-      request(
-        this.buildUrl("fixtures/matches.json", [
-          {
-            name: "date",
-            value: date
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.fixtures);
-        }
-      );
-    }
-  };
-
-  // get fixtures from a date in a certain language
-  this.getFixturesDateLanguage = (date, language, callback) => {
-    checkLanguage = this.checkLanguage(language);
-    checkDate = this.checkDate(date);
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkDate == 0 || checkDate == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-        )
-      );
-    } else if (checkDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkDate == 1 && checkLanguage == 1) {
-      request(
-        this.buildUrl("fixtures/matches.json", [
-          {
-            name: "date",
-            value: date
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.fixtures);
-        }
-      );
-    }
-  };
-
-  // get fixtures from a date from a certain competition
-  this.getFixturesDateCompetition = (date, competition_id, callback) => {
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    checkDate = this.checkDate(date);
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkDate == 0 || checkDate == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-        )
-      );
-    } else if (checkDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkDate == 1 && checkCompetition == 1) {
-      request(
-        this.buildUrl("fixtures/matches.json", [
-          {
-            name: "date",
-            value: date
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.fixtures);
-        }
-      );
-    }
-  };
-
-  // get fixtures from a certain competition in a certain language
-  this.getFixturesCompetitionLanguage = (
-    competition_id,
-    language,
-    callback
-  ) => {
-    checkLanguage = this.checkLanguage(language);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkLanguage == 1 && checkCompetition == 1) {
-      request(
-        this.buildUrl("fixtures/matches.json", [
-          {
-            name: "competition_id",
-            value: competition_id
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-          callback(null, res.body.data.fixtures);
-        }
-      );
-    }
-  };
-
-  //get history from this date onwards   PARAMETER => string (yyyy-mm-dd)
-  this.getHistoryFromDate = (date, callback) => {
-    request(
-      this.buildUrl("scores/history.json", [
-        {
-          name: "from",
-          value: date
-        }
-      ]),
-      {
-        json: true
-      },
-      (err, res, body) => {
-        if (err) {
-          return callback(err);
-        }
-
-        callback(null, res.body.data.match);
-      }
-    );
-  };
-
-  //get history until this date included    PARAMETER => string (yyyy-mm-dd)
-  this.getHistoryToDate = (date, callback) => {
-    request(
-      this.buildUrl("scores/history.json", [
-        {
-          name: "to",
-          value: date
-        }
-      ]),
-      {
-        json: true
-      },
-      (err, res, body) => {
-        if (err) {
-          return callback(err);
-        }
-
-        callback(null, res.body.data.match);
-      }
-    );
-  };
-
-  //get history for a certain competition    PARAMETER => integer(competition_id)
-  this.getHistoryByCompetition = (competition_id, callback) => {
-    check = this.checkCouComPagTeaFed(competition_id);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    } else {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "competition_id",
-            value: competition_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get matches from a cerain page if there are multiple     PARAMETER => integer(pageNo)
-  this.getHistoryFromPage = (page, callback) => {
-    check = this.checkCouComPagTeaFed(page);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The page must be an integer!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error("Incorrect parameter! The page must be bigger than 0!")
-      );
-    } else {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "page",
-            value: page
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get history in a certain language    PARAMETER => string   [ar, fa, en, ru]
-  this.getHistoryInLanguage = (language, callback) => {
-    check = this.checkLanguage(language);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    } else {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get history between 2 dates from a certain competition in a certain language
-  this.getHistoryBetweendDatesCountryLanguage = (
-    fromDate,
-    toDate,
-    competition_id,
-    language,
-    callback
-  ) => {
-    checkFromDate = this.checkDate(fromDate);
-    checkToDate = this.checkDate(toDate);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    checkLanguage = this.checkLanguage(language);
-    if (
-      checkFromDate == 0 ||
-      checkFromDate == -1 ||
-      checkToDate == 0 ||
-      checkToDate == -1
+    } else if (
+      filters.team1_id == undefined ||
+      filters.team2_id == undefined ||
+      filters.team1_id === filters.team2_id
     ) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-        )
-      );
-    } else if (checkFromDate == 2 || checkToDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkFromDate == 3 || checkToDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkFromDate == 4 || checkToDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
+      return callback(new Error("Two unique team id's are required!"));
     }
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (
-      checkLanguage == 1 &&
-      checkCompetition == 1 &&
-      checkFromDate == 1 &&
-      checkToDate == 1
-    ) {
+
+    if (curFilter.length >= 2) {
       request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "from",
-            value: fromDate
-          },
-          {
-            name: "to",
-            value: toDate
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
+        this.buildUrl("teams/head2head.json", curFilter),
         {
           json: true
         },
@@ -1315,1059 +1003,7 @@ function LivescoreAPI() {
             return callback(err);
           }
 
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get history between 2 dates from a certain competition
-  this.getHistoryBetweenDatesCompetition = (
-    fromDate,
-    toDate,
-    competition_id,
-    callback
-  ) => {
-    checkFromDate = this.checkDate(fromDate);
-    checkToDate = this.checkDate(toDate);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    if (
-      checkFromDate == 0 ||
-      checkFromDate == -1 ||
-      checkToDate == 0 ||
-      checkToDate == -1
-    ) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-        )
-      );
-    } else if (checkFromDate == 2 || checkToDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkFromDate == 3 || checkToDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkFromDate == 4 || checkToDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkCompetition == 1 && checkFromDate == 1 && checkToDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "from",
-            value: fromDate
-          },
-          {
-            name: "to",
-            value: toDate
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get history between 2 dates in a certain language
-  this.getHistoryBetweenDatesLanguage = (
-    fromDate,
-    toDate,
-    language,
-    callback
-  ) => {
-    checkFromDate = this.checkDate(fromDate);
-    checkToDate = this.checkDate(toDate);
-    checkLanguage = this.checkLanguage(language);
-    if (
-      checkFromDate == 0 ||
-      checkFromDate == -1 ||
-      checkToDate == 0 ||
-      checkToDate == -1
-    ) {
-      return {
-        success: false,
-        message:
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-      };
-    } else if (checkFromDate == 2 || checkToDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkFromDate == 3 || checkToDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkFromDate == 4 || checkToDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkLanguage == 1 && checkFromDate == 1 && checkToDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "from",
-            value: fromDate
-          },
-          {
-            name: "to",
-            value: toDate
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get history starting from a date from a certain competition in a certain language
-  this.getHistoryFromDateCompetitionLanguage = (
-    fromDate,
-    competition_id,
-    language,
-    callback
-  ) => {
-    checkFromDate = this.checkDate(fromDate);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    checkLanguage = this.checkLanguage(language);
-    if (checkFromDate == 0 || checkFromDate == -1) {
-      return {
-        success: false,
-        message:
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-      };
-    } else if (checkFromDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkFromDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkFromDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkLanguage == 1 && checkCompetition == 1 && checkFromDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "from",
-            value: fromDate
-          },
-          {
-            name: "competition_id",
-            value: lecompetition_idague
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get history until a date from a certain competition in a certain language
-  this.getHistoryToDateCompetitionLanguage = (
-    toDate,
-    competition_id,
-    language,
-    callback
-  ) => {
-    checkToDate = this.checkDate(toDate);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    checkLanguage = this.checkLanguage(language);
-    if (checkToDate == 0 || checkToDate == -1) {
-      return {
-        success: false,
-        message:
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-      };
-    } else if (checkToDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkToDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkToDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkLanguage == 1 && checkCompetition == 1 && checkToDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "to",
-            value: toDate
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get history between 2 dates
-  this.getHistoryBetweenDates = (fromDate, toDate, callback) => {
-    checkFromDate = this.checkDate(fromDate);
-    checkToDate = this.checkDate(toDate);
-    if (
-      checkFromDate == 0 ||
-      checkFromDate == -1 ||
-      checkToDate == 0 ||
-      checkToDate == -1
-    ) {
-      return {
-        success: false,
-        message:
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-      };
-    } else if (checkFromDate == 2 || checkToDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkFromDate == 3 || checkToDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkFromDate == 4 || checkToDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    } else if (checkFromDate == 1 && checkToDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "from",
-            value: fromDate
-          },
-          {
-            name: "to",
-            value: toDate
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get history starting from a date from a certain competition
-  this.getHistoryFromDateCompetition = (fromDate, competition_id, callback) => {
-    checkFromDate = this.checkDate(fromDate);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    if (checkFromDate == 0 || checkFromDate == -1) {
-      return {
-        success: false,
-        message:
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-      };
-    } else if (checkFromDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkFromDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkFromDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkCompetition == 1 && checkFromDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "from",
-            value: fromDate
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get history starting from a date in a certain language
-  this.getHistoryFromDateLanguage = (fromDate, language, callback) => {
-    checkFromDate = this.checkDate(fromDate);
-    checkLanguage = this.checkLanguage(language);
-    if (checkFromDate == 0 || checkFromDate == -1) {
-      return {
-        success: false,
-        message:
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-      };
-    } else if (checkFromDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkFromDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkFromDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkLanguage == 1 && checkFromDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "from",
-            value: fromDate
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get history until a date from a certain competition
-  this.getHistoryToDateCompetition = (toDate, competition_id, callback) => {
-    checkToDate = this.checkDate(toDate);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    if (checkToDate == 0 || checkToDate == -1) {
-      return {
-        success: false,
-        message:
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-      };
-    } else if (checkToDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkToDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkToDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkCompetition == 1 && checkToDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "to",
-            value: toDate
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get history until a date in a certain language
-  this.getHistoryToDateLanguage = (toDate, language, callback) => {
-    checkToDate = this.checkDate(toDate);
-    checkLanguage = this.checkLanguage(language);
-    if (checkToDate == 0 || checkToDate == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
-        )
-      );
-    } else if (checkToDate == 2) {
-      return callback(
-        new Error("Incorrect parameter! The year must be in this format: YYYY")
-      );
-    } else if (checkToDate == 3) {
-      return callback(
-        new Error("Incorrect parameter! The month must be in this format: MM")
-      );
-    } else if (checkToDate == 4) {
-      return callback(
-        new Error("Incorrect parameter! The day must be in this format: DD")
-      );
-    }
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkLanguage == 1 && checkToDate == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "to",
-            value: toDate
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get history from a competition in a certain language
-  this.getHistoryCompetitionLanguage = (competition_id, language, callback) => {
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    checkLanguage = this.checkLanguage(language);
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkLanguage == 1 && checkCompetition == 1) {
-      request(
-        this.buildUrl("scores/history.json", [
-          {
-            name: "competition_id",
-            value: competition_id
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get competitions from a certain country     PARAMETER => integer(countryId)
-  this.getCompetitionsFromCountry = (country_id, callback) => {
-    check = this.checkCouComPagTeaFed(country_id);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be an integer!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be bigger than 0!")
-      );
-    } else if (check == 1) {
-      request(
-        this.buildUrl("competitions/list.json", [
-          {
-            name: "country_id",
-            value: country_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.competition);
-        }
-      );
-    }
-  };
-
-  //get competitions from a certain federation     PARAMETER => integer(federationId)
-  this.getCompetitionsFromFederation = (federation_id, callback) => {
-    check = this.checkCouComPagTeaFed(federation_id);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The federation id must be an integer!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The federation id must be bigger than 0!"
-        )
-      );
-    } else if (check == 1) {
-      request(
-        this.buildUrl("competitions/list.json", [
-          {
-            name: "federation_id",
-            value: federation_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.competition);
-        }
-      );
-    }
-  };
-
-  //get livescores from a certain country  PARAMETER => integer(countryId)
-  this.getLiveScoresByCountry = (country_id, callback) => {
-    check = this.checkCouComPagTeaFed(country_id);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be an integer!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be bigger than 0!")
-      );
-    } else {
-      request(
-        this.buildUrl("scores/live.json", [
-          {
-            name: "country_id",
-            value: country_id
-          }
-        ]),
-        { json: true },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get livescores from a certain competition   PARAMETER => integer(competitionId)
-  this.getLiveScoresByCompetition = (competition_id, callback) => {
-    check = this.checkCouComPagTeaFed(competition_id);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    } else {
-      request(
-        this.buildUrl("scores/live.json", [
-          {
-            name: "competition_id",
-            value: competition_id
-          }
-        ]),
-        { json: true },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get livescores in a certain language   PARAMETER => string     [ar, fa, en, ru]
-  this.getLiveScoresInLanguage = (language, callback) => {
-    check = this.checkLanguage(language);
-    if (check == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (check == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    } else {
-      request(
-        this.buildUrl("scores/live.json", [
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        { json: true },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  //get livescores from a certain country, from a certain competition in a certain language
-  this.getLiveScoresCountryCompetitionLanguage = (
-    country_id,
-    competition_id,
-    language,
-    callback
-  ) => {
-    checkCountry = this.checkCouComPagTeaFed(country_id);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    checkLanguage = this.checkLanguage(language);
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkCountry == 0) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be bigger than 0!")
-      );
-    }
-    if (checkCountry == 1 && checkCompetition == 1 && checkLanguage == 1) {
-      request(
-        this.buildUrl("scores/live.json", [
-          {
-            name: "country_id",
-            value: country_id
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get livescores from a certain country in a certain language
-  this.getLiveScoresCountryLanguage = (country_id, language, callback) => {
-    checkCountry = this.checkCouComPagTeaFed(country_id);
-    checkLanguage = this.checkLanguage(language);
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCountry == 0) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be an integer!")
-      );
-    } else if (checkCountry == -1) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be bigger than 0!")
-      );
-    }
-    if (checkCountry == 1 && checkLanguage == 1) {
-      request(
-        this.buildUrl("scores/live.json", [
-          {
-            name: "country_id",
-            value: country_id
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get livescores from a certain competition in a certain country
-  this.getLiveScoresCountryCompetiton = (
-    country_id,
-    competition_id,
-    callback
-  ) => {
-    checkCountry = this.checkCouComPagTeaFed(country_id);
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    if (checkCountry == 0) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error("Incorrect parameter! The country id must be bigger than 0!")
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkCountry == 1 && checkCompetition == 1) {
-      request(
-        this.buildUrl("scores/live.json", [
-          {
-            name: "country_id",
-            value: country_id
-          },
-          {
-            name: "competition_id",
-            value: competition_id
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
-        }
-      );
-    }
-  };
-
-  // get livescores from a certain competition in a certain language
-  this.getLiveScoresCompetitionLanguage = (
-    competition_id,
-    language,
-    callback
-  ) => {
-    checkCompetition = this.checkCouComPagTeaFed(competition_id);
-    checkLanguage = this.checkLanguage(language);
-    if (checkLanguage == 0) {
-      return callback(
-        new Error("Incorrect parameter! The language must be a string!")
-      );
-    } else if (checkLanguage == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
-        )
-      );
-    }
-    if (checkCompetition == 0) {
-      return callback(
-        new Error("Incorrect parameter! The competition id must be an integer!")
-      );
-    } else if (checkCompetition == -1) {
-      return callback(
-        new Error(
-          "Incorrect parameter! The competition id must be bigger than 0!"
-        )
-      );
-    }
-    if (checkCompetition == 1 && checkLanguage == 1) {
-      request(
-        this.buildUrl("scores/live.json", [
-          {
-            name: "competition_id",
-            value: competition_id
-          },
-          {
-            name: "lang",
-            value: language
-          }
-        ]),
-        {
-          json: true
-        },
-        (err, res, body) => {
-          if (err) {
-            return callback(err);
-          }
-
-          callback(null, res.body.data.match);
+          callback(null, res.body.data);
         }
       );
     }
