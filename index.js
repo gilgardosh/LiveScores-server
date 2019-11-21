@@ -6,7 +6,7 @@ const livescoreapi = require("./livescores");
 
 const app = express();
 const livescores = livescoreapi.LivescoreAPI();
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -48,19 +48,20 @@ app.listen(port, () => {
   console.log(`Server listening on port`, port);
 });
 
-//verify LiveScores-api
-// livescores.verify((err, data) => {
-//   if (err) {
-//     console.log("LiveScores:", err);
-//   } else {
-//     console.log("LiveScores:", data);
-//   }
-// });
-const filters = {
-  'competition_id': 177,
-  'season_id': 4
-};
+// verify LiveScores-api connection
+livescores.verify((err, data) => {
+  if (err) {
+    console.log("LiveScores:", err);
+  } else {
+    console.log("LiveScores:", data);
+  }
+});
 
+
+// const filters = {
+//   'competition_id': 177,
+//   'season_id': 4
+// };
 // livescores.getStandings(filters, (err, data) => {
 //   if (err) {
 //     console.log("Fixtures:", err);
