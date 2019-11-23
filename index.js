@@ -1,71 +1,76 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const { pool } = require("./config");
-const livescoreapi = require("./livescores");
+const postgres = require("./postgres");
+const livescoreapi = require("./livescores/livescores");
 
 const app = express();
 const livescores = livescoreapi.LivescoreAPI();
+const db = postgres.PostgresDB();
 const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
-const getUsers = (request, response) => {
-  pool.query("SELECT * FROM users", (error, results) => {
-    if (error) {
-      throw error;
-    }
-    response.status(200).json(results.rows);
-  });
-};
-
-const addUser = (request, response) => {
-  const { name, email, password } = request.body;
-
-  pool.query(
-    "INSERT INTO users (name, email, password) VALUES ($1, $2, $3)",
-    [name, email, password],
-    error => {
-      if (error) {
-        throw error;
-      }
-      response.status(201).json({ status: "success", message: "User added." });
-    }
-  );
-};
-
 app
   .route("/users")
-  // GET endpoint
-  .get(getUsers)
-  // POST endpoint
-  .post(addUser);
+  .get(db.getUsers)
+  .post(db.addUser);
+
+
+
+
+app
+  .route("/livescores/countries")
+  .get(livescores.getAllCountries);
+
+app
+  .route("/livescores/federations")
+  .get(livescores.getAllFederations);
+
+app
+  .route("/livescores/teams")
+  .get(livescores.getAllTeams)
+  .post(livescores.getTeamsWithFilters);
+
+app
+  .route("/livescores/fixtures")
+  .get(livescores.getAllFixtures)
+  .post(livescores.getFixtursWithFilters);
+
+app
+  .route("/livescores/competitions")
+  .get(livescores.getAllCompetitions)
+  .post(livescores.getCompetitionsWithFilters);
+
+app
+  .route("/livescores/standings")
+  .post(livescores.getStandings);
+
+app
+  .route("/livescores/history")
+  .get(livescores.getFullHistory)
+  .post(livescores.getHistoryWithFilters);
+
+app
+  .route("/livescores/livescores")
+  .get(livescores.getAllLiveScores)
+  .post(livescores.getLiveScoresWithFilters);
+
+app
+  .route("/livescores/matchevents")
+  .post(livescores.getLiveMatchEvents);
+
+app
+  .route("/livescores/matchstats")
+  .post(livescores.getMatchStats);
+
+app
+  .route("/livescores/h2h")
+  .post(livescores.getTeamsH2H);
 
 // Start server
 app.listen(port, () => {
   console.log(`Server listening on port`, port);
 });
-
-// verify LiveScores-api connection
-livescores.verify((err, data) => {
-  if (err) {
-    console.log("LiveScores:", err);
-  } else {
-    console.log("LiveScores:", data);
-  }
-});
-
-
-// const filters = {
-//   'competition_id': 177,
-//   'season_id': 4
-// };
-// livescores.getStandings(filters, (err, data) => {
-//   if (err) {
-//     console.log("Fixtures:", err);
-//   } else {
-//     console.log("Fixtures:", data);
-//   }
-// });

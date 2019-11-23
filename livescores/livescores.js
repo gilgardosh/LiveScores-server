@@ -27,33 +27,17 @@ function LivescoreAPI() {
   };
 
   //verify account
-  this.verify = callback => {
+  this.verify = (req, res) => {
     request(
       this.buildUrl("users/pair.json"),
       {
         json: true
       },
-      (err, res, body) => {
-        if (err) {
-          return callback(err);
-        }
-        callback(null, res.body.data.message);
-      }
-    );
-  };
-
-  //check api key and secret
-  this.checkKeySecret = () => {
-    request(
-      checkers.buildUrl("users/pair.json"),
-      {
-        json: true
-      },
-      (err, res, body) => {
+      (err, results, body) => {
         if (err) {
           throw err;
         }
-        return res.body.data.message;
+        res.status(200).json(results.body.data.message);
       }
     );
   };
@@ -61,9 +45,9 @@ function LivescoreAPI() {
   //function to check if country/competition/page/team/federation is integer and > 0
   // 0 -> no integer, -1 -> <0, 1 -> correct
   this.checkCouComPagTeaFed = couComPagTeaFed => {
-    if (!Number.isInteger(couComPagTeaFed)) {
+    if (!Number.isInteger(parseInt(couComPagTeaFed))) {
       return 0;
-    } else if (couComPagTeaFed <= 0) {
+    } else if (parseInt(couComPagTeaFed) <= 0) {
       return -1;
     } else {
       return 1;
@@ -113,49 +97,49 @@ function LivescoreAPI() {
   };
 
   //get all countries
-  this.getAllCountries = callback => {
+  this.getAllCountries = (req, res) => {
     request(
       this.buildUrl("countries/list.json"),
       {
         json: true
       },
-      (err, res, body) => {
+      (err, results, body) => {
         if (err) {
-          return callback(err);
+          throw err;
         }
-        callback(null, res.body.data.country);
+        res.status(200).json(results.body.data.country);
       }
     );
   };
 
   //get all federations
-  this.getAllFederations = callback => {
+  this.getAllFederations = (req, res) => {
     request(
       this.buildUrl("federations/list.json"),
       {
         json: true
       },
-      (err, res, body) => {
+      (err, results, body) => {
         if (err) {
-          return callback(err);
+          throw err;
         }
-        callback(null, res.body.data.federation);
+        res.status(200).json(results.body.data.federation);
       }
     );
   };
 
   //get all fixtures
-  this.getAllFixtures = callback => {
+  this.getAllFixtures = (req, res) => {
     request(
       this.buildUrl("fixtures/matches.json"),
       {
         json: true
       },
-      (err, res, body) => {
+      (err, results, body) => {
         if (err) {
-          return callback(err);
+          throw err;
         }
-        callback(res.body.data.fixtures);
+        res.status(200).json(results.body.data.fixtures);
       }
     );
   };
@@ -167,29 +151,30 @@ function LivescoreAPI() {
        competition_id => integer(competition_id)
        team => integer(team))
        round => string (round) */
-  this.getFixtursWithFilters = (filters, callback) => {
+  this.getFixtursWithFilters = (req, res) => {
+    const filters = req.query;
     let curFilter = [];
-
+    
     if (filters.date != undefined) {
       checkDate = this.checkDate(filters.date);
       if (checkDate == 0 || checkDate == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
           )
         );
       } else if (checkDate == 2) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The year must be in this format: YYYY"
           )
         );
       } else if (checkDate == 3) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The month must be in this format: MM")
         );
       } else if (checkDate == 4) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The day must be in this format: DD")
         );
       } else if (checkDate == 1) {
@@ -199,15 +184,15 @@ function LivescoreAPI() {
         });
       }
     }
-
+    
     if (filters.language != undefined) {
       checkLanguage = this.checkLanguage(filters.language);
       if (checkLanguage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The language must be a string!")
         );
       } else if (checkLanguage == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
           )
@@ -223,11 +208,11 @@ function LivescoreAPI() {
     if (filters.page != undefined) {
       checkPage = this.checkCouComPagTeaFed(filters.page);
       if (checkPage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The page must be an integer!")
         );
       } else if (checkPage == -1) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The page must be bigger than 0!")
         );
       } else if (checkPage == 1) {
@@ -241,13 +226,13 @@ function LivescoreAPI() {
     if (filters.competition_id != undefined) {
       checkCompetition = this.checkCouComPagTeaFed(filters.competition_id);
       if (checkCompetition == 0) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The competition id must be an integer!"
           )
         );
       } else if (checkCompetition == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The competition id must be bigger than 0!"
           )
@@ -263,11 +248,11 @@ function LivescoreAPI() {
     if (filters.team != undefined) {
       checkTeam = this.checkCouComPagTeaFed(filters.team);
       if (checkTeam == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The team id must be an integer!")
         );
       } else if (checkTeam == -1) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The team id be bigger than 0!")
         );
       } else if (checkTeam == 1) {
@@ -284,37 +269,43 @@ function LivescoreAPI() {
         value: filters.round
       });
     }
-
+    
     if (curFilter.length >= 1) {
       request(
         this.buildUrl("fixtures/matches.json", curFilter),
         {
           json: true
         },
-        (err, res, body) => {
+        (err, results, body) => {
           if (err) {
-            return callback(err);
+            throw err;
           }
 
-          callback(null, res.body.data.fixtures);
+          res.status(200).json(results.body.data.fixtures);
         }
+      );
+    } else {
+      throw (
+        new Error(
+          "No needed filters were provided!"
+        )
       );
     }
   };
 
   //get all competitions
-  this.getAllCompetitions = callback => {
+  this.getAllCompetitions = (req, res) => {
     request(
       this.buildUrl("competitions/list.json"),
       {
         json: true
       },
-      (err, res, body) => {
+      (err, results, body) => {
         if (err) {
-          return callback(err);
+          throw err;
         }
 
-        callback(null, res.body.data.competition);
+        res.status(200).json(results.body.data.competition);
       }
     );
   };
@@ -322,17 +313,18 @@ function LivescoreAPI() {
   /* get competitions with filters:
        country_id => integer(country_id)
        federation_id => integer(federation_id) */
-  this.getCompetitionsWithFilters = (filters, callback) => {
+  this.getCompetitionsWithFilters = (req, res) => {
+    const filters = req.query;
     let curFilter = [];
 
     if (filters.country_id != undefined) {
       checkCountry = this.checkCouComPagTeaFed(filters.country_id);
       if (checkCountry == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The country id must be an integer!")
         );
       } else if (checkCountry == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The country id must be bigger than 0!"
           )
@@ -348,13 +340,13 @@ function LivescoreAPI() {
     if (filters.federation_id != undefined) {
       checkFederation = this.checkCouComPagTeaFed(filters.federation_id);
       if (checkFederation == 0) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The federation id must be an integer!"
           )
         );
       } else if (checkFederation == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The federation id must be bigger than 0!"
           )
@@ -373,29 +365,35 @@ function LivescoreAPI() {
         {
           json: true
         },
-        (err, res, body) => {
+        (err, results, body) => {
           if (err) {
-            return callback(err);
+            throw err;
           }
 
-          callback(null, res.body.data.competition);
+          res.status(200).json(results.body.data.competition);
         }
+      );
+    } else {
+      throw (
+        new Error(
+          "No needed filters were provided!"
+        )
       );
     }
   };
 
   //get all teams
-  this.getAllTeams = callback => {
+  this.getAllTeams = (req, res) => {
     request(
       this.buildUrl("teams/list.json"),
       {
         json: true
       },
-      (err, res, body) => {
+      (err, results, body) => {
         if (err) {
-          return callback(err);
+          throw err;
         }
-        callback(null, res.body.data.teams);
+        res.status(200).json(results.body.data.teams);
       }
     );
   };
@@ -406,17 +404,18 @@ function LivescoreAPI() {
        language => string [ar, fa, en, ru]
        size => integer (itemsNo)
        page => integer(pageNo) */
-  this.getTeamsWithFilters = (filters, callback) => {
+  this.getTeamsWithFilters = (req, res) => {
+    const filters = req.query;
     let curFilter = [];
 
     if (filters.country_id != undefined) {
       checkCountry = this.checkCouComPagTeaFed(filters.country_id);
       if (checkCountry == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The country id must be an integer!")
         );
       } else if (checkCountry == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The country id must be bigger than 0!"
           )
@@ -432,13 +431,13 @@ function LivescoreAPI() {
     if (filters.federation_id != undefined) {
       checkFederation = this.checkCouComPagTeaFed(filters.federation_id);
       if (checkFederation == 0) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The federation id must be an integer!"
           )
         );
       } else if (checkFederation == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The federation id must be bigger than 0!"
           )
@@ -454,11 +453,11 @@ function LivescoreAPI() {
     if (filters.language != undefined) {
       checkLanguage = this.checkLanguage(filters.language);
       if (checkLanguage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The language must be a string!")
         );
       } else if (checkLanguage == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
           )
@@ -474,11 +473,11 @@ function LivescoreAPI() {
     if (filters.page != undefined) {
       checkPage = this.checkCouComPagTeaFed(filters.page);
       if (checkPage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The page must be an integer!")
         );
       } else if (checkPage == -1) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The page must be bigger than 0!")
         );
       } else if (checkPage == 1) {
@@ -491,11 +490,11 @@ function LivescoreAPI() {
 
     if (filters.size != undefined) {
       if (!Number.isInteger(filters.size)) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The size must be an integer!")
         );
       } else if (filters.size <= 0 || filters.size >= 101) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The size must be in range 1-100!")
         );
       } else {
@@ -512,13 +511,19 @@ function LivescoreAPI() {
         {
           json: true
         },
-        (err, res, body) => {
+        (err, results, body) => {
           if (err) {
-            return callback(err);
+            throw err;
           }
 
-          callback(null, res.body.data.teams);
+          res.status(200).json(results.body.data.teams);
         }
+      );
+    } else {
+      throw (
+        new Error(
+          "No needed filters were provided!"
+        )
       );
     }
   };
@@ -527,19 +532,20 @@ function LivescoreAPI() {
     competition_id => integer(competition_id)
     season_id => integer (season id)
     language => string [ar, fa, en, ru] */
-  this.getStandings = (filters, callback) => {
+  this.getStandings = (req, res) => {
+    const filters = req.query;
     let curFilter = [];
 
     if (filters.competition_id != undefined) {
       checkCompetition = this.checkCouComPagTeaFed(filters.competition_id);
       if (checkCompetition == 0) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The competition id must be an integer!"
           )
         );
       } else if (checkCompetition == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The competition id must be bigger than 0!"
           )
@@ -554,11 +560,11 @@ function LivescoreAPI() {
 
     if (filters.season_id != undefined) {
       if (!Number.isInteger(filters.season_id)) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The seson_id must be an integer!")
         );
       } else if (filters.season_id <= 0 || filters.season_id >= 6) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The season_id must be in range 1-5!")
         );
       } else {
@@ -572,11 +578,11 @@ function LivescoreAPI() {
     if (filters.language != undefined) {
       checkLanguage = this.checkLanguage(filters.language);
       if (checkLanguage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The language must be a string!")
         );
       } else if (checkLanguage == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
           )
@@ -595,30 +601,36 @@ function LivescoreAPI() {
         {
           json: true
         },
-        (err, res, body) => {
+        (err, results, body) => {
           if (err) {
-            return callback(err);
+            throw err;
           }
 
-          callback(null, res.body.data.table);
+          res.status(200).json(results.body.data.table);
         }
+      );
+    } else {
+      throw (
+        new Error(
+          "No needed filters were provided!"
+        )
       );
     }
   };
 
   //get full history
-  this.getFullHistory = callback => {
+  this.getFullHistory = (req, res) => {
     request(
       this.buildUrl("scores/history.json"),
       {
         json: true
       },
-      (err, res, body) => {
+      (err, results, body) => {
         if (err) {
-          return callback(err);
+          throw err;
         }
 
-        callback(null, res.body.data.match);
+        res.status(200).json(results.body.data.match);
       }
     );
   };
@@ -630,29 +642,30 @@ function LivescoreAPI() {
        team => integer(team))
        page => integer(pageNo)
        language => string [ar, fa, en, ru] */
-  this.getHistoryWithFilters = (filters, callback) => {
+  this.getHistoryWithFilters = (req, res) => {
+    const filters = req.query;
     let curFilter = [];
 
     if (filters.fromDate != undefined) {
       checkDate = this.checkDate(filters.fromDate);
       if (checkDate == 0 || checkDate == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
           )
         );
       } else if (checkDate == 2) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The year must be in this format: YYYY"
           )
         );
       } else if (checkDate == 3) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The month must be in this format: MM")
         );
       } else if (checkDate == 4) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The day must be in this format: DD")
         );
       } else if (checkDate == 1) {
@@ -666,23 +679,23 @@ function LivescoreAPI() {
     if (filters.toDate != undefined) {
       checkDate = this.checkDate(filters.toDate);
       if (checkDate == 0 || checkDate == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The date must be a string in this format: YYYY-MM-DD!"
           )
         );
       } else if (checkDate == 2) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The year must be in this format: YYYY"
           )
         );
       } else if (checkDate == 3) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The month must be in this format: MM")
         );
       } else if (checkDate == 4) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The day must be in this format: DD")
         );
       } else if (checkDate == 1) {
@@ -696,13 +709,13 @@ function LivescoreAPI() {
     if (filters.competition_id != undefined) {
       checkCompetition = this.checkCouComPagTeaFed(filters.competition_id);
       if (checkCompetition == 0) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The competition id must be an integer!"
           )
         );
       } else if (checkCompetition == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The competition id must be bigger than 0!"
           )
@@ -718,11 +731,11 @@ function LivescoreAPI() {
     if (filters.team != undefined) {
       checkTeam = this.checkCouComPagTeaFed(filters.team);
       if (checkTeam == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The team id must be an integer!")
         );
       } else if (checkTeam == -1) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The team id be bigger than 0!")
         );
       } else if (checkTeam == 1) {
@@ -736,11 +749,11 @@ function LivescoreAPI() {
     if (filters.page != undefined) {
       checkPage = this.checkCouComPagTeaFed(filters.page);
       if (checkPage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The page must be an integer!")
         );
       } else if (checkPage == -1) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The page must be bigger than 0!")
         );
       } else if (checkPage == 1) {
@@ -754,11 +767,11 @@ function LivescoreAPI() {
     if (filters.language != undefined) {
       checkLanguage = this.checkLanguage(filters.language);
       if (checkLanguage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The language must be a string!")
         );
       } else if (checkLanguage == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
           )
@@ -777,30 +790,36 @@ function LivescoreAPI() {
         {
           json: true
         },
-        (err, res, body) => {
+        (err, results, body) => {
           if (err) {
-            return callback(err);
+            throw err;
           }
 
-          callback(null, res.body.data.match);
+          res.status(200).json(results.body.data.match);
         }
+      );
+    } else {
+      throw (
+        new Error(
+          "No needed filters were provided!"
+        )
       );
     }
   };
 
   //get all livescores
-  this.getAllLiveScores = callback => {
+  this.getAllLiveScores = (req, res) => {
     request(
       this.buildUrl("scores/live.json"),
       {
         json: true
       },
-      (err, res, body) => {
+      (err, results, body) => {
         if (err) {
-          return callback(err);
+          throw err;
         }
 
-        callback(null, res.body.data.match);
+        res.status(200).json(results.body.data.match);
       }
     );
   };
@@ -809,17 +828,18 @@ function LivescoreAPI() {
        country_id => integer(country_id)
        language => string [ar, fa, en, ru]
        competition_id => integer(competition_id)*/
-  this.getLiveScoresWithFilters = (filters, callback) => {
+  this.getLiveScoresWithFilters = (req, res) => {
+    const filters = req.query;    
     let curFilter = [];
 
     if (filters.country_id != undefined) {
       checkCountry = this.checkCouComPagTeaFed(filters.country_id);
       if (checkCountry == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The country id must be an integer!")
         );
       } else if (checkCountry == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The country id must be bigger than 0!"
           )
@@ -835,11 +855,11 @@ function LivescoreAPI() {
     if (filters.language != undefined) {
       checkLanguage = this.checkLanguage(filters.language);
       if (checkLanguage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The language must be a string!")
         );
       } else if (checkLanguage == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
           )
@@ -855,13 +875,13 @@ function LivescoreAPI() {
     if (filters.competition_id != undefined) {
       checkCompetition = this.checkCouComPagTeaFed(filters.competition_id);
       if (checkCompetition == 0) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The competition id must be an integer!"
           )
         );
       } else if (checkCompetition == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The competition id must be bigger than 0!"
           )
@@ -880,75 +900,105 @@ function LivescoreAPI() {
         {
           json: true
         },
-        (err, res, body) => {
+        (err, results, body) => {
           if (err) {
-            return callback(err);
+            throw err;
           }
 
-          callback(null, res.body.data.match);
+          res.status(200).json(results.body.data.match);
         }
+      );
+    } else {
+      throw (
+        new Error(
+          "No needed filters were provided!"
+        )
       );
     }
   };
 
   // get live event    match_id => integer(match_id)
-  this.getLiveMatchEvents = (match_id, callback) => {
-    request(
-      this.buildUrl("scores/live.json", [
+  this.getLiveMatchEvents = (req, res) => {
+    const match_id = req.query.match_id
+    
+    if (match_id -= undefined) {
+      throw (
+        new Error(
+          "Missing match id!"
+        )
+      );
+    } else {
+      request(
+        this.buildUrl("scores/live.json", [
+          {
+            name: "id",
+            value: match_id
+          }
+        ]),
         {
-          name: "id",
-          value: match_id
+          json: true
+        },
+        (err, results, body) => {
+          if (err) {
+            throw err;
+          }
+          res.status(200).json(results.body.data.match);
         }
-      ]),
-      {
-        json: true
-      },
-      (err, res, body) => {
-        if (err) {
-          return callback(err);
-        }
-        callback(null, res.body.data.match);
-      }
-    );
+      );
+    }
+    
+
   };
 
   // get match statistics    match_id => integer(match_id)
-  this.getMatchStats = (match_id, callback) => {
-    request(
-      this.buildUrl("matches/stats.json", [
+  this.getMatchStats = (req, res) => {
+    const match_id = req.query.match_id
+    
+    if (match_id -= undefined) {
+      throw (
+        new Error(
+          "Missing match id!"
+        )
+      );
+    } else {
+      request(
+        this.buildUrl("matches/stats.json", [
+          {
+            name: "match_id",
+            value: match_id
+          }
+        ]),
         {
-          name: "match_id",
-          value: match_id
+          json: true
+        },
+        (err, results, body) => {
+          if (err) {
+            throw err;
+          }
+          res.status(200).json(results.body.data);
         }
-      ]),
-      {
-        json: true
-      },
-      (err, res, body) => {
-        if (err) {
-          return callback(err);
-        }
-        callback(null, res.body.data);
-      }
-    );
+      );
+    }
+
+
   };
 
-  //
   /* get teams head 2 head:
        team1_id => integer(team))
        team2_id => integer(team))
        language => string [ar, fa, en, ru] */
-  this.getTeamsH2H = (filters, callback) => {
+  this.getTeamsH2H = (req, res) => {
+    const filters = req.query;
     let curFilter = [];
 
     if (filters.language != undefined) {
       checkLanguage = this.checkLanguage(filters.language);
       if (checkLanguage == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The language must be a string!")
         );
       } else if (checkLanguage == -1) {
-        return callback(
+        throw (
           new Error(
             "Incorrect parameter! The language must be one of the following: [ar, fa, en, ru]!"
           )
@@ -965,11 +1015,11 @@ function LivescoreAPI() {
       checkTeam1 = this.checkCouComPagTeaFed(filters.team1_id);
       checkTeam2 = this.checkCouComPagTeaFed(filters.team2_id);
       if (checkTeam1 == 0 || checkTeam2 == 0) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The team id must be an integer!")
         );
       } else if (checkTeam1 == -1 || checkTeam2 == -1) {
-        return callback(
+        throw (
           new Error("Incorrect parameter! The team id be bigger than 0!")
         );
       } else if (checkTeam1 == 1 || checkTeam2 == 1) {
@@ -989,7 +1039,7 @@ function LivescoreAPI() {
       filters.team2_id == undefined ||
       filters.team1_id === filters.team2_id
     ) {
-      return callback(new Error("Two unique team id's are required!"));
+      throw (new Error("Two unique team id's are required!"));
     }
 
     if (curFilter.length >= 2) {
@@ -998,13 +1048,19 @@ function LivescoreAPI() {
         {
           json: true
         },
-        (err, res, body) => {
+        (err, results, body) => {
           if (err) {
-            return callback(err);
+            throw err;
           }
 
-          callback(null, res.body.data);
+          res.status(200).json(results.body.data);
         }
+      );
+    } else {
+      throw (
+        new Error(
+          "No needed filters were provided!"
+        )
       );
     }
   };
